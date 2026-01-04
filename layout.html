@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photobooth Layouts</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        /* Global */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Cormorant Garamond', serif;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #ffd1e1 0%, #ffe7ef 40%, #ffffff 80%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        h1 {
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sub {
+            font-size: 1rem;
+            opacity: .7;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+/* ===== Cute Stickers (VISIBLE & ABOVE) ===== */
+.sticker{
+    position:absolute;
+    width:60px;
+    height:60px;
+    z-index:20;
+    pointer-events:none;
+    animation:float 5s ease-in-out infinite;
+}
+
+.s1{left:5%; top:120px;}
+.s2{right:6%; top:140px; animation-delay:1s;}
+.s3{left:18%; top:360px; animation-delay:2s;}
+.s4{right:20%; top:380px; animation-delay:3s;}
+
+@keyframes float{
+    0%{transform:translateY(0) rotate(0deg);}
+    50%{transform:translateY(-18px) rotate(8deg);}
+    100%{transform:translateY(0) rotate(0deg);}
+}
+        /* Carousel wrapper */
+        .wrapper {
+            width: 100%;
+            max-width: 1000px;
+            position: relative;
+            z-index: 1;
+            padding: 10px 0;
+        }
+
+        .arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: #fff;
+            border: none;
+            font-size: 28px;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            opacity: .8;
+            border-radius: 50%;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, .15);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all .2s ease;
+            z-index: 3;
+        }
+
+        .arrow:hover {
+            transform: translateY(-50%) scale(1.1);
+            opacity: 1;
+        }
+
+        .arrow.left {
+            left: -30px;
+        }
+
+        .arrow.right {
+            right: -30px;
+        }
+
+        /* Stickers */
+        .sticker {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-size: contain;
+            z-index: 3;
+            animation: float 4s ease-in-out infinite;
+        }
+
+        .sticker.left {
+            left: -20px;
+            top: 35%;
+        }
+
+        .sticker.right {
+            right: -20px;
+            top: 35%;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-12px) rotate(10deg);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        /* Carousel */
+        .carousel {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            padding: 10px 0;
+        }
+
+        .carousel::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* Card */
+        .card {
+            flex: 0 0 auto;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform .2s ease, box-shadow .2s ease;
+            position: relative;
+            min-width: 130px;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, .15);
+        }
+
+        .tag {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: #ff69b4;
+            color: #fff;
+            font-size: .7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            z-index: 2;
+        }
+
+        /* Strip */
+        .strip {
+            background: #fff;
+            padding: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, .08);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .inner {
+            display: grid;
+            gap: 3px;
+            width: 100%;
+            height: 100%;
+        }
+
+        .strip.v {
+            width: 130px;
+            height: 260px;
+        }
+
+        .strip.v .inner {
+            grid-template-rows: repeat(var(--shots), 1fr);
+        }
+
+        .strip.h {
+            width: 210px;
+            height: 200px;
+        }
+
+        .strip.h.h2 .inner {
+            grid-template-columns: repeat(2, 1fr);
+            grid-auto-rows: 1fr;
+        }
+
+        .strip.h.h4 .inner {
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .strip.h.h6 .inner {
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(2, 1fr);
+        }
+
+        .photo {
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            border-radius: 6px;
+        }
+
+        .name {
+            margin-top: 8px;
+            font-size: .95rem;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .meta {
+            font-size: .7rem;
+            opacity: .6;
+            text-align: center;
+        }
+
+        /* Mobile */
+        @media(max-width:700px) {
+            .strip.v {
+                width: 100px;
+                height: 220px;
+            }
+
+            .strip.h {
+                width: 160px;
+                height: 160px;
+            }
+
+            .card {
+                min-width: 110px;
+            }
+
+            .sticker {
+                display: none;
+            }
+
+            .arrow.left {
+                left: -15px;
+            }
+
+            .arrow.right {
+                right: -15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+<!-- Cute Stickers -->
+<img src="https://img.icons8.com/emoji/96/cherry-blossom.png" class="sticker s1">
+<img src="https://img.icons8.com/emoji/96/cherry-blossom.png" class="sticker s2">
+<img src="https://img.icons8.com/emoji/96/cherry-blossom.png" class="sticker s3">
+<img src="https://img.icons8.com/emoji/96/cherry-blossom.png" class="sticker s4">
+
+    <h1>Choose Your Layout</h1>
+    <div class="sub">Pick a photobooth style that matches your vibe!</div>
+
+    <div class="wrapper">
+        <button class="arrow left" onclick="scrollCarousel(-1)">‹</button>
+        <button class="arrow right" onclick="scrollCarousel(1)">›</button>
+
+        <div class="carousel" id="carousel">
+
+            <!-- Vertical 2 -->
+            <div class="card" onclick="selectLayout(2)">
+                <div class="tag">Try it now</div>
+                <div class="strip v">
+                    <div class="inner" style="--shots:2">
+                        <div class="photo"
+                            style="background-image:url('https://i.pinimg.com/236x/67/5f/19/675f193245a10299f284edaeb114480a.jpg')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://plus.unsplash.com/premium_photo-1680883415362-238794b19dde?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8YWVzdGhldGljfGVufDB8fDB8fHww')">
+                        </div>
+                    </div>
+                </div>
+                <div class="name">Sweet Memories</div>
+                <div class="meta">2 poses · Vertical</div>
+            </div>
+
+            <!-- Vertical 4 -->
+            <div class="card" onclick="selectLayout(4)">
+                <div class="tag">Holiday</div>
+                <div class="strip v">
+                    <div class="inner" style="--shots:4">
+                        <div class="photo"
+                            style="background-image:url('https://i.pinimg.com/236x/67/5f/19/675f193245a10299f284edaeb114480a.jpg')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://plus.unsplash.com/premium_photo-1680883415362-238794b19dde?fm=jpg&q=60&w=3000&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8YWVzdGhldGljfGVufDB8fDB8fHww')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://m.media-amazon.com/images/I/71p4iTFDJGL._SL500_.jpg')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqYsMmc3kSeCcaEN70bqC6jpoK47320pmYZw&s')">
+                        </div>
+                    </div>
+                </div>
+                <div class="name">Holiday Vibes</div>
+                <div class="meta">4 poses · Vertical</div>
+            </div>
+
+            <!-- Horizontal 2 -->
+            <div class="card" onclick="selectLayout(2,'h')">
+                <div class="tag">Chill</div>
+                <div class="strip h h2">
+                    <div class="inner">
+                        <div class="photo"
+                            style="background-image:url('https://media.greatbigphotographyworld.com/wp-content/uploads/2022/04/leading-lines.jpg')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://thumbs.dreamstime.com/b/aesthetic-purple-skies-nature-evening-274720026.jpg')">
+                        </div>
+                    </div>
+                </div>
+                <div class="name">Aesthetic Duo</div>
+                <div class="meta">2 poses · Horizontal</div>
+            </div>
+
+            <!-- Horizontal 4 -->
+            <div class="card" onclick="selectLayout(4,'h')">
+                <div class="tag">Fun</div>
+                <div class="strip h h4">
+                    <div class="inner">
+                        <div class="photo"
+                            style="background-image:url('https://m.media-amazon.com/images/I/71p4iTFDJGL._SL500_.jpg')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqYsMmc3kSeCcaEN70bqC6jpoK47320pmYZw&s')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://media.greatbigphotographyworld.com/wp-content/uploads/2022/04/leading-lines.jpg')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://thumbs.dreamstime.com/b/aesthetic-purple-skies-nature-evening-274720026.jpg')">
+                        </div>
+                    </div>
+                </div>
+                <div class="name">Party Mix</div>
+                <div class="meta">4 poses · Horizontal</div>
+            </div>
+
+            <!-- Vertical 3 -->
+            <div class="card" onclick="selectLayout(3)">
+                <div class="tag">Classic</div>
+                <div class="strip v">
+                    <div class="inner" style="--shots:3">
+                        <div class="photo"
+                            style="background-image:url('https://m.media-amazon.com/images/I/71p4iTFDJGL._SL500_.jpg')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQqYsMmc3kSeCcaEN70bqC6jpoK47320pmYZw&s')">
+                        </div>
+                        <div class="photo"
+                            style="background-image:url('https://media.greatbigphotographyworld.com/wp-content/uploads/2022/04/leading-lines.jpg')">
+                        </div>
+                    </div>
+                </div>
+                <div class="name">Classic Memories</div>
+                <div class="meta">3 poses · Vertical</div>
+            </div>
+
+            <!-- Horizontal 6 -->
+            <div class="card" onclick="selectLayout(6,'h')">
+                <div class="tag">Fun</div>
+                <div class="strip h h6">
+                    <div class="inner">
+                        <div class="photo" style="background-image:url('https://picsum.photos/200/300?random=1')"></div>
+                        <div class="photo" style="background-image:url('https://picsum.photos/200/300?random=2')"></div>
+                        <div class="photo" style="background-image:url('https://picsum.photos/200/300?random=3')"></div>
+                        <div class="photo" style="background-image:url('https://picsum.photos/200/300?random=4')"></div>
+                        <div class="photo" style="background-image:url('https://picsum.photos/200/300?random=5')"></div>
+                        <div class="photo" style="background-image:url('https://picsum.photos/200/300?random=6')"></div>
+                    </div>
+                </div>
+                <div class="name">Party Fun</div>
+                <div class="meta">6 poses · Horizontal</div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        const carousel = document.getElementById("carousel");
+        function scrollCarousel(dir) { carousel.scrollBy({ left: dir * 240, behavior: "smooth" }); }
+        function selectLayout(count, layout) {
+            sessionStorage.setItem("poseCount", count);
+            sessionStorage.setItem("layout", layout || 'v');
+            location.href = "capture.html";
+        }
+    </script>
+
+</body>
+
+</html>

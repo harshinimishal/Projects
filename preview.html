@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Preview Strip</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+body{
+  height:100vh;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background: radial-gradient(circle at center, #ffd1e1 0%, #ffe7ef 40%, #ffffff 80%);
+  font-family:'Poppins',sans-serif;
+  flex-direction:column;
+}
+
+.box{
+  text-align:center;
+}
+
+#canvasImg{
+  max-width:90vw;
+  max-height:70vh;
+  border-radius:16px;
+  box-shadow:0 22px 45px rgba(0,0,0,.28);
+}
+
+.print-btn{
+  margin-top:22px;
+  width:56px;
+  height:56px;
+  border-radius:50%;
+  border:none;
+  background:linear-gradient(45deg,#ff9acb,#ff5fa2);
+  color:white;
+  font-size:22px;
+  cursor:pointer;
+  box-shadow:0 12px 30px rgba(255,95,162,.45);
+  transition:.25s ease;
+}
+
+.print-btn:hover{
+  transform:scale(1.1);
+}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+  <canvas id="canvasImg"></canvas>
+  <br>
+  <button class="print-btn" onclick="downloadJPG()">
+    <i class="fa-solid fa-print"></i>
+  </button>
+</div>
+
+<script>
+const canvasData = sessionStorage.getItem("finalStrip");
+const canvas = document.getElementById("canvasImg");
+const ctx = canvas.getContext("2d");
+
+const image = new Image();
+image.src = canvasData;
+
+image.onload = () => {
+  canvas.width = image.width;
+  canvas.height = image.height;
+  ctx.drawImage(image, 0, 0);
+};
+
+// Download as JPEG with white background
+function downloadJPG(){
+  const tmpCanvas = document.createElement("canvas");
+  const tmpCtx = tmpCanvas.getContext("2d");
+
+  tmpCanvas.width = canvas.width;
+  tmpCanvas.height = canvas.height;
+
+  // Fill background white
+  tmpCtx.fillStyle = "#ffffff";
+  tmpCtx.fillRect(0,0,tmpCanvas.width,tmpCanvas.height);
+
+  // Draw the styled strip
+  tmpCtx.drawImage(canvas,0,0);
+
+  const a = document.createElement("a");
+  a.href = tmpCanvas.toDataURL("image/jpeg",0.95);
+  a.download = "photostrip.jpg";
+  a.click();
+}
+</script>
+
+</body>
+</html>

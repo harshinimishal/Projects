@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capture Your Moment</title>
+
+<script src="https://cdn.jsdelivr.net/npm/pixi.js@7.x/dist/pixi.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  min-height:100vh;
+  background:radial-gradient(circle at top,#ffd1e6,#fff 70%);
+  font-family:'Poppins',sans-serif;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:30px 20px;
+}
+.title{
+  font-family:'Pacifico',cursive;
+  font-size:34px;
+  color:#ff6fa8;
+  margin-bottom:6px;
+}
+.subtitle{
+  font-size:13px;
+  opacity:.65;
+  margin-bottom:28px;
+}
+.stage{
+  display:flex;
+  gap:40px;
+  align-items:flex-start;
+}
+.preview{
+  width:150px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.preview img{
+  width:100%;
+  height:150px;
+  object-fit:cover;
+  border-radius:16px;
+  box-shadow:0 12px 25px rgba(0,0,0,.2);
+  background:#fff;
+}
+.camera-area{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:14px;
+}
+.counter{
+  font-size:14px;
+  color:#ff6fa8;
+  position:relative;
+}
+#countdown{
+  position:absolute;
+  inset:0;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-size:64px;
+  font-weight:bold;
+  color:#ff5fa2;
+  pointer-events:none;
+}
+#cameraStage{
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:0 18px 40px rgba(0,0,0,.25);
+  background:black;
+}
+.controls{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  justify-content:center;
+}
+select, .upload{
+  padding:8px 18px;
+  border-radius:999px;
+  border:1px solid #f2b6cf;
+  background:#fff;
+  font-size:13px;
+}
+.upload{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  cursor:pointer;
+}
+.upload input{display:none}
+.buttons{
+  display:flex;
+  gap:14px;
+  margin-top:6px;
+}
+button{
+  padding:12px 26px;
+  border:none;
+  border-radius:999px;
+  background:linear-gradient(45deg,#ff9acb,#ff4d94);
+  color:#fff;
+  font-size:14px;
+  cursor:pointer;
+  transition:.2s;
+}
+button:hover{
+  transform:translateY(-2px) scale(1.05);
+}
+.secondary{
+  background:#ffe1ee;
+  color:#ff5f9a;
+}
+@media(max-width:900px){
+  .stage{flex-direction:column;align-items:center}
+  .preview{flex-direction:row;width:100%;justify-content:center}
+  .preview img{width:120px;height:120px}
+}
+</style>
+</head>
+
+<body>
+
+<h1 class="title">Capture Your Moment</h1>
+<p class="subtitle">What you see here is exactly what goes on your strip ✨</p>
+
+<div class="stage">
+  <div class="preview" id="preview"></div>
+
+  <div class="camera-area">
+    <div class="counter">
+      <span id="shotCount">0</span>/<span id="shotTotal">3</span>
+      <div id="countdown"></div>
+    </div>
+
+    <div id="cameraStage"></div>
+
+    <div class="controls">
+      <select id="timer">
+        <option value="3000">3 sec</option>
+        <option value="5000">5 sec</option>
+        <option value="8000">8 sec</option>
+      </select>
+
+      <label class="upload">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Upload
+        <input type="file" accept="image/*" onchange="uploadImage(this)">
+      </label>
+    </div>
+
+    <div class="buttons">
+      <button onclick="startCapture()">Capture</button>
+      <button class="secondary" onclick="retake()">Retake</button>
+      <button class="secondary" onclick="done()">Next</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const layout = sessionStorage.getItem("layout") || "v";
+const count = parseInt(sessionStorage.getItem("poseCount")) || 3;
+document.getElementById("shotTotal").textContent = count;
+
+let shots=0;
+let capturing=false;
+const images=[];
+
+// Camera dimensions
+const SLOT = layout==="h"? {w:520/count, h:220} : {w:220, h:520/count};
+const app = new PIXI.Application({width:SLOT.w,height:SLOT.h,backgroundAlpha:0});
+document.getElementById("cameraStage").appendChild(app.view);
+
+// Video element
+const video = document.createElement("video");
+video.autoplay = true;
+video.muted = true;
+video.playsInline = true;
+
+// Video texture sprite
+let videoSprite;
+let videoReady = false;
+
+navigator.mediaDevices.getUserMedia({ video: true })
+.then(stream => {
+  video.srcObject = stream;
+  video.play();
+
+  video.addEventListener("playing", ()=>{
+    videoReady = true;
+    const texture = PIXI.Texture.from(video);
+    videoSprite = new PIXI.Sprite(texture);
+    app.stage.addChild(videoSprite);
+
+    // Resize to fill camera canvas
+    app.ticker.add(()=>{
+      if(!video.videoWidth) return;
+      const scale = Math.max(app.screen.width/video.videoWidth, app.screen.height/video.videoHeight);
+      videoSprite.scale.set(scale);
+      videoSprite.x = (app.screen.width - videoSprite.width)/2;
+      videoSprite.y = (app.screen.height - videoSprite.height)/2;
+    });
+  });
+})
+.catch(e=>alert("Camera access denied or unavailable"));
+
+// Countdown element
+const countdownEl = document.getElementById("countdown");
+
+// Capture with countdown
+function startCapture(){
+  if(shots>=count || capturing || !videoReady) return;
+  capturing = true;
+  let remaining = parseInt(document.getElementById("timer").value)/1000;
+  countdownEl.textContent = remaining;
+
+  const interval = setInterval(()=>{
+    remaining--;
+    countdownEl.textContent = remaining>0?remaining:'';
+    if(remaining<0){
+      clearInterval(interval);
+      snap();
+    }
+  },1000);
+}
+
+// Snap photo
+function snap(){
+  if(!videoReady) return alert("Video not ready!");
+  const img = app.renderer.extract.canvas(app.stage).toDataURL();
+  images.push(img);
+  addPreview(img);
+  shots++;
+  document.getElementById("shotCount").textContent = shots;
+  capturing=false;
+}
+
+// Add to preview
+function addPreview(src){
+  const img = document.createElement("img");
+  img.src = src;
+  document.getElementById("preview").appendChild(img);
+}
+
+// Upload image
+function uploadImage(input){
+  if(shots>=count) return;
+  const img = new Image();
+  img.src = URL.createObjectURL(input.files[0]);
+  img.onload = ()=>{
+    images.push(img.src);
+    addPreview(img.src);
+    shots++;
+    document.getElementById("shotCount").textContent = shots;
+  };
+}
+
+// Retake
+function retake(){
+  shots=0;
+  images.length=0;
+  document.getElementById("preview").innerHTML='';
+  document.getElementById("shotCount").textContent=0;
+}
+
+// Next
+function done(){
+  sessionStorage.setItem("capturedImages", JSON.stringify(images));
+  sessionStorage.setItem("stripLayout", layout);
+  location.href="decorate.html";
+}
+</script>
+
+</body>
+</html>

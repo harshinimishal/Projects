@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Style Your Strip</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+
+body{
+    background: radial-gradient(circle at center, #ffd1e1 0%, #ffe7ef 40%, #ffffff 80%);
+    font-family:'Poppins',sans-serif;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    padding:30px;
+}
+
+.app{
+    max-width:100%;
+}
+
+.header{
+    text-align:center;
+    margin-bottom:28px;
+}
+.header h1{
+    font-family:'Pacifico',cursive;
+    font-size:36px;
+    color:#ff6fa8;
+}
+.header p{
+    opacity:.7;
+    margin-top:6px;
+}
+
+.main{
+    display:flex;
+    gap:30px;
+}
+
+.canvas-wrap{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+canvas{
+    box-shadow:0 20px 45px rgba(0,0,0,.25);
+}
+
+.controls{
+    width:280px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+}
+
+.controls h3{
+    font-size:13px;
+    color:#555;
+}
+
+.row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.color{
+    width:26px;height:26px;
+    border-radius:40%;
+    border:1px solid #ccc;
+    cursor:pointer;
+}
+
+.texture{
+    width:42px;height:42px;
+    border-radius:10px;
+    background-size:cover;
+    cursor:pointer;
+    border:1px solid #ddd;
+}
+
+.stickers img{
+    width:40px;
+    cursor:pointer;
+}
+
+button,input{
+    padding:9px 14px;
+    border-radius:18px;
+    border:1px solid #ddd;
+    font-size:13px;
+}
+
+button{
+    background:#ffe0ee;
+    border:none;
+    cursor:pointer;
+}
+button:hover{background:#ffcadd}
+
+.primary{
+    background:#ff6fa8;
+    color:white;
+}
+
+.action{
+    margin-top:auto;
+    display:flex;
+    gap:12px;
+}
+
+@media(max-width:900px){
+    .main{flex-direction:column}
+    .controls{width:100%}
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+  <div class="header">
+    <h1>Style your strip</h1>
+    <p>Decorate & save your photobooth memories ✨</p>
+  </div>
+
+  <div class="main">
+    <div class="canvas-wrap">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="controls">
+
+      <h3>Strip color</h3>
+      <div class="row" id="bgColors"></div>
+
+      <h3>Textures</h3>
+      <div class="row" id="textures"></div>
+
+      <h3>Frame color</h3>
+      <div class="row" id="frameColors"></div>
+
+      <h3>Date & Time</h3>
+      <button onclick="addDateTime()">Add date & time</button>
+
+      <h3>Text</h3>
+      <input id="textInput" placeholder="cute message ♡">
+      <button onclick="addText()">Add text</button>
+
+      <h3>Stickers</h3>
+      <div class="row stickers" id="stickers"></div>
+
+      <div class="action">
+        <button onclick="undo()">Undo</button>
+        <button class="primary" onclick="preview()">Preview</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= DATA ================= */
+const images = JSON.parse(sessionStorage.getItem("capturedImages") || "[]");
+const layout = sessionStorage.getItem("layout") || "v";
+
+/* ================= CALCULATE STRIP SIZE ================= */
+const IMAGE_W = 260;
+const IMAGE_H = 200;
+const GAP = 10;
+const TEXT_SPACE = 60;
+
+// Horizontal strip
+const count = images.length;
+const stripWidth  = layout==="h" ? count * IMAGE_W + GAP*(count+1) : IMAGE_W + GAP*2;
+const stripHeight = layout==="h" ? IMAGE_H + GAP*2 + TEXT_SPACE : count * IMAGE_H + GAP*(count+1) + TEXT_SPACE;
+
+/* ================= CANVAS ================= */
+const canvas = new fabric.Canvas('canvas',{selection:true});
+canvas.setWidth(stripWidth);
+canvas.setHeight(stripHeight);
+
+/* ================= STRIP ================= */
+const strip = new fabric.Rect({
+  left:0,top:0,
+  width:stripWidth,
+  height:stripHeight,
+  fill:'#fff',
+  selectable:false
+});
+canvas.add(strip).sendToBack();
+
+/* ================= FRAME ================= */
+let frame=null;
+function setFrame(color){
+  if(frame) canvas.remove(frame);
+  const stroke=4;
+  frame=new fabric.Rect({
+    left: stroke/2,
+    top: stroke/2,
+    width: stripWidth-(stroke+stroke),
+    height: stripHeight-(stroke+stroke),
+    fill:'transparent',
+    stroke: color,
+    strokeWidth: stroke,
+    selectable:false
+  });
+  canvas.add(frame);
+  frame.bringToFront();
+}
+setFrame('#ff6fa8');
+
+/* ================= PLACE IMAGES ================= */
+images.forEach((src,i)=>{
+  const x = GAP + (layout==="h" ? i*(IMAGE_W+GAP) : 0);
+  const y = GAP + (layout==="h" ? 0 : i*(IMAGE_H+GAP));
+
+  fabric.Image.fromURL(src,img=>{
+    // Scale proportionally
+    const scaleW = IMAGE_W / img.width;
+    const scaleH = IMAGE_H / img.height;
+    const scale = Math.min(scaleW, scaleH);
+    img.scale(scale);
+
+    // Center in slot
+    img.left = x + (IMAGE_W - img.getScaledWidth())/2;
+    img.top  = y + (IMAGE_H - img.getScaledHeight())/2;
+
+    img.lockMovementX=true;
+    img.lockMovementY=true;
+
+    canvas.add(img);
+  });
+});
+
+/* ================= DATE & TIME ================= */
+let dateText;
+function addDateTime(){
+  if(dateText) canvas.remove(dateText);
+  const text = new Date().toLocaleString();
+  dateText = new fabric.Text(text,{
+    left:14,
+    top:canvas.height-26,
+    fontSize:12,
+    fill:'#555',
+    selectable:false
+  });
+  canvas.add(dateText);
+}
+
+/* ================= TEXT ================= */
+function addText(){
+  const v=document.getElementById('textInput').value;
+  if(!v) return;
+  const t=new fabric.Text(v,{
+    left:canvas.width/2,
+    top:canvas.height-48,
+    originX:'center',
+    fontFamily:'Pacifico',
+    fontSize:22,
+    fill:'#ff6fa8'
+  });
+  canvas.add(t);
+}
+
+/* ================= COLORS ================= */
+[
+ '#ffffff','#ffe6f0','#f7f2ff','#fef6e4','#eae4ff',
+ '#fbe7c6','#dff5ea','#fde2e4','#e3f2fd','#f1f1f1'
+].forEach(c=>{
+  const d=document.createElement('div');
+  d.className='color';
+  d.style.background=c;
+  d.onclick=()=>{strip.set('fill',c);canvas.renderAll();}
+  bgColors.appendChild(d);
+});
+
+/* ================= TEXTURES (DARK INCLUDED) ================= */
+[
+ 'dark-fabric','black-linen','graphy-dark','concrete-wall',
+ 'paper-fibers','soft-wallpaper','subtle-grunge','real-carbon-fibre'
+].forEach(t=>{
+  const url=`https://www.transparenttextures.com/patterns/${t}.png`;
+  const d=document.createElement('div');
+  d.className='texture';
+  d.style.backgroundImage=`url(${url})`;
+  d.onclick=()=>{
+    fabric.util.loadImage(url,img=>{
+      strip.set('fill',new fabric.Pattern({source:img,repeat:'repeat'}));
+      canvas.renderAll();
+    });
+  };
+  textures.appendChild(d);
+});
+
+/* ================= FRAME COLORS ================= */
+['#ff6fa8','#fff','#000','#333','#ffc8dd','#cdb4db','#90dbf4','#ffd166','#bde0fe','#e5e5e5']
+.forEach(c=>{
+  const d=document.createElement('div');
+  d.className='color';
+  d.style.background=c;
+  d.onclick=()=>setFrame(c);
+  frameColors.appendChild(d);
+});
+
+/* ================= STICKERS ================= */
+[
+ 'https://img.icons8.com/emoji/96/cherry-blossom.png',
+ 'https://img.icons8.com/emoji/96/butterfly.png',
+ 'https://img.icons8.com/emoji/96/pink-heart.png',
+ 'https://img.icons8.com/emoji/96/ribbon.png',
+ 'https://img.icons8.com/emoji/96/strawberry.png'
+].forEach(url=>{
+  const i=document.createElement('img');
+  i.src=url;
+  i.onclick=()=>{
+    fabric.Image.fromURL(url,s=>{
+      s.scaleToWidth(46);
+      s.left=(canvas.width - s.getScaledWidth())/2;
+      s.top=(canvas.height - s.getScaledHeight())/2;
+      canvas.add(s);
+    });
+  };
+  stickers.appendChild(i);
+});
+
+/* ================= UNDO ================= */
+function undo(){
+  const o=canvas.getObjects().pop();
+  if(o && o!==strip && o!==frame && o!==dateText) canvas.remove(o);
+}
+
+/* ================= PREVIEW ================= */
+function preview(){
+  sessionStorage.setItem("finalStrip",canvas.toDataURL("image/png"));
+  location.href="preview.html";
+}
+</script>
+
+</body>
+</html>
